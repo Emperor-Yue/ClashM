@@ -140,7 +140,8 @@ jobs:
           set -euo pipefail
           candidate="/Applications/Xcode_${XCODE_VERSION}.app"
           if [ -d "$candidate" ]; then
-            sudo xcode-select -s "$candidate/Contents/Developer"
+            export DEVELOPER_DIR="$candidate/Contents/Developer"
+            echo "DEVELOPER_DIR=$DEVELOPER_DIR" >> "$GITHUB_ENV"
           else
             echo "::warning::Xcode ${XCODE_VERSION} is not installed on this runner image; using the image default."
           fi
@@ -233,7 +234,8 @@ jobs:
           set -euo pipefail
           candidate="/Applications/Xcode_${XCODE_VERSION}.app"
           if [ -d "$candidate" ]; then
-            sudo xcode-select -s "$candidate/Contents/Developer"
+            export DEVELOPER_DIR="$candidate/Contents/Developer"
+            echo "DEVELOPER_DIR=$DEVELOPER_DIR" >> "$GITHUB_ENV"
           else
             echo "::warning::Xcode ${XCODE_VERSION} is not installed on this runner image; using the image default."
           fi
@@ -341,3 +343,18 @@ jobs:
             esac
           done < <(find "$app" -type f)
           exit $status
+
+      - name: Package unsigned app
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            DerivedData-Release/Build/Products/Release/ClashMax.app \
+            ClashMax-custom-icon-unsigned.zip
+
+      - name: Upload unsigned app
+        uses: actions/upload-artifact@v7
+        with:
+          name: ClashMax-custom-icon-unsigned
+          path: ClashMax-custom-icon-unsigned.zip
+          retention-days: 7
+          if-no-files-found: error
+
